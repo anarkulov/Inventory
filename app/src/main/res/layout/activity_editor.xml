@@ -8,13 +8,13 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
+        android:layout_height="wrap_content">
+
 
         <ImageView
             android:id="@+id/imageViewEditId"
-            android:layout_width="match_parent"
-            android:layout_height="270dp"
+            android:layout_width="250dp"
+            android:layout_height="160dp"
             android:layout_marginTop="8dp"
             android:scaleType="center"
             app:layout_constraintEnd_toEndOf="parent"
@@ -25,10 +25,10 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Choose an image"
-            android:textSize="22sp"
+            android:layout_marginStart="16dp"
+            android:text="@string/choose_an_image"
+            android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@+id/chooseImageButtonId"
-            app:layout_constraintEnd_toStartOf="@+id/chooseImageButtonId"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/chooseImageButtonId" />
 
@@ -36,90 +36,184 @@
             android:id="@+id/chooseImageButtonId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Choose"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:text="@string/choose"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/imageViewEditId" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/title"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+
+            app:layout_constraintTop_toBottomOf="@+id/chooseImageButtonId" />
 
         <EditText
             android:id="@+id/titleEditTextId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:hint="Title"
+            android:layout_marginStart="16dp"
             android:minWidth="150dp"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chooseImageButtonId" />
+            app:layout_constraintBottom_toBottomOf="@+id/textView"
+            app:layout_constraintTop_toTopOf="@+id/textView"
+            app:layout_constraintStart_toEndOf="@id/textView"
+            tools:layout_editor_absoluteX="16dp" />
 
         <Spinner
             android:id="@+id/spinnerEditId"
-            android:layout_width="wrap_content"
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
             android:spinnerMode="dropdown"
             app:layout_constraintBottom_toBottomOf="@+id/priceEditTextId"
-            app:layout_constraintEnd_toStartOf="@+id/priceEditTextId"
+            app:layout_constraintStart_toEndOf="@+id/priceEditTextId"
             app:layout_constraintTop_toTopOf="@+id/priceEditTextId" />
+
+        <TextView
+            android:id="@+id/PriceTextView"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/price"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textView"/>
 
         <EditText
             android:id="@+id/priceEditTextId"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:hint="Price"
-            android:inputType="number"
-            android:minWidth="100dp"
-            android:textColor="@color/black"
-            android:textSize="20sp"
-            app:layout_constraintBottom_toBottomOf="@+id/titleEditTextId"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/titleEditTextId" />
-
-        <EditText
-            android:id="@+id/quantityEditTextId"
-            android:layout_width="wrap_content"
             android:minWidth="150dp"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:textSize="20sp"
+            android:layout_marginStart="16dp"
             android:inputType="number"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@+id/PriceTextView"
+            app:layout_constraintBottom_toBottomOf="@+id/PriceTextView"
+            app:layout_constraintTop_toBottomOf="@+id/PriceTextView"
+            app:layout_constraintTop_toTopOf="@+id/PriceTextView" />
+
+        <TextView
+            android:id="@+id/quantityTextViewId"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="16dp"
+            android:minWidth="150dp"
+            android:text="@string/quantity"
+            android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/titleEditTextId"
-            android:hint="Quantity" />
+            app:layout_constraintTop_toBottomOf="@id/PriceTextView" />
+
+
+        <LinearLayout
+            android:id="@+id/quantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/quantityTextViewId"
+            app:layout_constraintStart_toStartOf="parent"
+            >
+
+            <Button
+                android:id="@+id/quantity_sub"
+                android:layout_width="45dp"
+                android:layout_height="40dp"
+                android:text="@string/decrement" />
+
+            <TextView
+                android:id="@+id/quantityText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:text="@string/zero" />
+
+            <Button
+                android:id="@+id/quantity_add"
+                android:layout_width="45dp"
+                android:layout_height="40dp"
+                android:text="@string/increment" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/locationTextView"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:minWidth="150dp"
+            android:text="@string/location"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/quantity" />
+
 
         <EditText
             android:id="@+id/locationEditTextId"
             android:layout_width="wrap_content"
-            android:minWidth="150dp"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/quantityEditTextId"
-            android:hint="Location" />
+            android:layout_marginStart="16dp"
+            android:minWidth="150dp"
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@id/locationTextView"
+            app:layout_constraintBottom_toBottomOf="@+id/locationTextView"
+            app:layout_constraintTop_toTopOf="@+id/locationTextView" />
 
+        <TextView
+            android:id="@+id/supplierTextView"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:minWidth="150dp"
+            android:text="@string/supplier"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/locationTextView" />
+
+
+        <EditText
+            android:id="@+id/supplierEditTextId"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:minWidth="100dp"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@id/supplierTextView"
+            app:layout_constraintStart_toEndOf="@+id/supplierTextView"
+            app:layout_constraintTop_toTopOf="@+id/supplierTextView" />
+
+        <TextView
+            android:id="@+id/descriptionTextView"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:minWidth="150dp"
+            android:text="@string/description"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/supplierTextView" />
         <EditText
             android:id="@+id/descriptionEditTextId"
             android:layout_width="350dp"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:hint="Description"
-            android:textSize="20sp"
+            android:layout_marginStart="16dp"
+            android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/locationEditTextId" />
-
-        <EditText
-            android:id="@+id/supplierEditTextId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:hint="Supplier"
-            android:minWidth="100dp"
-            android:textSize="20sp"
-            app:layout_constraintBottom_toBottomOf="@+id/quantityEditTextId"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/quantityEditTextId" />
+            app:layout_constraintTop_toBottomOf="@+id/descriptionTextView" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -1,10 +1,10 @@
 package com.erzhan.inventory.activities
 
-import android.Manifest
 import android.content.ContentUris
+import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.database.Cursor
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
@@ -12,10 +12,9 @@ import android.view.MenuItem
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
-import androidx.core.content.ContextCompat
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
@@ -50,13 +49,13 @@ class DetailActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         setContentView(R.layout.activity_detail)
 
         titleTextView = findViewById(R.id.detailTitleId)
-        priceTextView = findViewById(R.id.priceEditTextId)
-        locationTextView = findViewById(R.id.locationEditTextId)
-        quantityTextView = findViewById(R.id.quantityEditTextId)
-        currencyImageView = findViewById(R.id.spinnerEditId)
-        supplierTextView = findViewById(R.id.supplierEditTextId)
-        descriptionTextView = findViewById(R.id.descriptionEditTextId)
-        imageImageView = findViewById(R.id.imageViewEditId)
+        priceTextView = findViewById(R.id.priceDetailTextId)
+        locationTextView = findViewById(R.id.locationDetailTextViewId)
+        quantityTextView = findViewById(R.id.quantityDetailTextViewId)
+        currencyImageView = findViewById(R.id.currencyImageViewId)
+        supplierTextView = findViewById(R.id.supplierDetailTextViewId)
+        descriptionTextView = findViewById(R.id.descriptionDetailTextViewId)
+        imageImageView = findViewById(R.id.imageDetailImageViewId)
 
         val intent = intent
         currentUri = intent.data
@@ -69,26 +68,11 @@ class DetailActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
     }
 
     override fun onBackPressed() {
-        // If the pet hasn't changed, continue with handling back button press
-//        if (!petHasChanged) {
         super.onBackPressed()
         return
-//        }
-
-        // Otherwise if there are unsaved changes, setup a dialog to warn the user.
-        // Create a click listener to handle the user confirming that changes should be discarded.
-//        val discardButtonClickListener =
-//            DialogInterface.OnClickListener { dialogInterface, i -> // User clicked "Discard" button, close the current activity.
-//                finish()
-//            }
-
-        // Show dialog that there are unsaved changes
-//        showUnsavedChangesDialog(discardButtonClickListener)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // Inflate the menu options from the res/menu/menu_editor.xml file.
-        // This adds menu items to the app bar.
         menuInflater.inflate(R.menu.menu_detail, menu)
         return true
     }
@@ -98,27 +82,46 @@ class DetailActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             editPet()
             return true
         } else if (item.itemId == R.id.action_delete) {
-//            showDeleteConfirmationDialog()
+            showDeleteConfirmationDialog()
             return true
         } else if (item.itemId == android.R.id.home) {
-//            if (!petHasChanged) {
                 NavUtils.navigateUpFromSameTask(this@DetailActivity)
                 return true
-//            }
-//
-//            // Otherwise if there are unsaved changes, setup a dialog to warn the user.
-//            // Create a click listener to handle the user confirming that
-//            // changes should be discarded.
-//            val discardButtonClickListener =
-//                DialogInterface.OnClickListener { dialogInterface, i -> // User clicked "Discard" button, navigate to parent activity.
-//                    NavUtils.navigateUpFromSameTask(this@EditorActivity)
-//                }
-//
-//            // Show a dialog that notifies the user they have unsaved changes
-//            showUnsavedChangesDialog(discardButtonClickListener)
-//            return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage(R.string.delete_dialog_msg)
+        builder.setPositiveButton(R.string.delete
+        ) { _, _ ->
+            deletePet()
+        }
+        builder.setNegativeButton(R.string.cancel
+        ) { dialog, _ ->
+            dialog?.dismiss()
+        }
+        val alertDialog = builder.create()
+        alertDialog.show()
+    }
+
+    private fun deletePet() {
+        if (currentUri != null) {
+            val deletedRowId = contentResolver.delete(currentUri!!, null, null)
+            if (deletedRowId == 0) {
+                Toast.makeText(
+                    this, getString(R.string.editor_delete_pet_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    this, getString(R.string.editor_delete_pet_successful),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        finish()
     }
 
     private fun editPet() {
@@ -158,7 +161,7 @@ class DetailActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             val currency = data.getInt(data.getColumnIndex(COLUMN_INVENTORY_CURRENCY));
             val supplier = data.getString(data.getColumnIndex(COLUMN_INVENTORY_SUPPLIER));
             val description = data.getString(data.getColumnIndex(COLUMN_INVENTORY_DESCRIPTION));
-            val imageUri = data.getString(data.getColumnIndex(COLUMN_INVENTORY_IMAGE));
+            val image = data.getBlob(data.getColumnIndex(COLUMN_INVENTORY_IMAGE));
 
             titleTextView.text = title
             priceTextView.text = price
@@ -166,8 +169,10 @@ class DetailActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             quantityTextView.text = quantity
             supplierTextView.text = supplier
             descriptionTextView.text = description
-            if (imageUri != null){
-                imageImageView.setImageURI(Uri.parse(imageUri))
+
+            if (image != null) {
+                val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
+                imageImageView.setImageBitmap(bitmap)
             } else {
                 imageImageView.setImageResource(R.drawable.image_placeholder)
             }

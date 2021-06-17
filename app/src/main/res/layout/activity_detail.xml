@@ -11,7 +11,7 @@
         android:layout_height="wrap_content">
 
     <ImageView
-        android:id="@+id/imageViewEditId"
+        android:id="@+id/imageDetailImageViewId"
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:scaleType="center"
@@ -30,21 +30,21 @@
             android:textColor="@color/textColor"
             android:textSize="26sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageViewEditId"
+            app:layout_constraintTop_toBottomOf="@+id/imageDetailImageViewId"
             tools:text="Title" />
 
         <ImageView
-            android:id="@+id/spinnerEditId"
+            android:id="@+id/currencyImageViewId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:src="@drawable/currency_som"
-            app:layout_constraintBottom_toBottomOf="@+id/priceEditTextId"
-            app:layout_constraintEnd_toStartOf="@+id/priceEditTextId"
-            app:layout_constraintTop_toTopOf="@+id/priceEditTextId" />
+            app:layout_constraintBottom_toBottomOf="@+id/priceDetailTextId"
+            app:layout_constraintEnd_toStartOf="@+id/priceDetailTextId"
+            app:layout_constraintTop_toTopOf="@+id/priceDetailTextId" />
 
         <TextView
-            android:id="@+id/priceEditTextId"
+            android:id="@+id/priceDetailTextId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
@@ -56,7 +56,7 @@
             tools:text="180" />
 
         <TextView
-            android:id="@+id/quantityEditTextId"
+            android:id="@+id/quantityDetailTextViewId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -69,7 +69,7 @@
             tools:text="quantity" />
 
         <TextView
-            android:id="@+id/descriptionEditTextId"
+            android:id="@+id/descriptionDetailTextViewId"
             android:layout_width="260dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -77,20 +77,20 @@
             android:textSize="16sp"
             android:textColor="@color/textColor"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/quantityEditTextId"
+            app:layout_constraintTop_toBottomOf="@+id/quantityDetailTextViewId"
             tools:text="description" />
 
         <TextView
-            android:id="@+id/supplierEditTextId"
+            android:id="@+id/supplierDetailTextViewId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:textSize="15sp"
             android:textAllCaps="true"
             android:textColor="@color/textColor"
-            app:layout_constraintBottom_toBottomOf="@+id/quantityEditTextId"
+            app:layout_constraintBottom_toBottomOf="@+id/quantityDetailTextViewId"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/quantityEditTextId"
+            app:layout_constraintTop_toTopOf="@+id/quantityDetailTextViewId"
             tools:text="Supplier" />
 
         <ImageView
@@ -98,13 +98,13 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:src="@drawable/ic_location"
-            app:layout_constraintBottom_toBottomOf="@+id/locationEditTextId"
-            app:layout_constraintEnd_toStartOf="@+id/locationEditTextId"
-            app:layout_constraintTop_toTopOf="@+id/locationEditTextId"
+            app:layout_constraintBottom_toBottomOf="@+id/locationDetailTextViewId"
+            app:layout_constraintEnd_toStartOf="@+id/locationDetailTextViewId"
+            app:layout_constraintTop_toTopOf="@+id/locationDetailTextViewId"
             app:tint="@color/black" />
 
         <TextView
-            android:id="@+id/locationEditTextId"
+            android:id="@+id/locationDetailTextViewId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
@@ -112,7 +112,7 @@
             android:textSize="15sp"
             android:textColor="@color/textColor"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/descriptionEditTextId"
+            app:layout_constraintTop_toTopOf="@+id/descriptionDetailTextViewId"
             tools:text="Location" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -16,7 +16,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.TextUtils
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -46,7 +45,6 @@ import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_DOLLA
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_RUBLE
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_SOM
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_TENGE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.getBytes
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -58,10 +56,12 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
 
     lateinit var titleEditText: EditText
     lateinit var priceEditText: EditText
-    lateinit var quantityEditText: EditText
+    lateinit var quantityTextView: TextView
     lateinit var supplierEditText: EditText
     lateinit var descriptionEditText: EditText
     private lateinit var locationEditText: EditText
+    lateinit var incrementButton: Button
+    lateinit var decrementButton: Button
 
     lateinit var imageImageView: ImageView
     lateinit var chooseImageButton: Button
@@ -73,6 +73,8 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
     var inventoryHasChanged = false
     val READ_EXTERNAL_STORAGE = 1
     val GET_IMAGE = 1
+    var number = 0
+    val QUANTITY_TEXT_KEY = "KEY"
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,7 +85,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
 
         titleEditText = findViewById(R.id.titleEditTextId)
         priceEditText = findViewById(R.id.priceEditTextId)
-        quantityEditText = findViewById(R.id.quantityEditTextId)
+        quantityTextView = findViewById(R.id.quantityText)
         supplierEditText = findViewById(R.id.supplierEditTextId)
         descriptionEditText = findViewById(R.id.descriptionEditTextId)
         locationEditText = findViewById(R.id.locationEditTextId)
@@ -95,10 +97,22 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
                 chooseFile()
             }
         }
+        incrementButton = findViewById(R.id.quantity_add)
+        incrementButton.setOnClickListener {
+            number = quantityTextView.text.toString().toInt()
+            number++
+            quantityTextView.text = number.toString()
+        }
+        decrementButton = findViewById(R.id.quantity_sub)
+        descriptionEditText.setOnClickListener {
+            number = quantityTextView.text.toString().toInt()
+            number--
+            quantityTextView.text = number.toString()
+        }
 
         titleEditText.setOnTouchListener(touchListener)
         priceEditText.setOnTouchListener(touchListener)
-        quantityEditText.setOnTouchListener(touchListener)
+        quantityTextView.setOnTouchListener(touchListener)
         supplierEditText.setOnTouchListener(touchListener)
         descriptionEditText.setOnTouchListener(touchListener)
         locationEditText.setOnTouchListener(touchListener)
@@ -114,6 +128,19 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         }
 
         setupSpinner()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(
+            QUANTITY_TEXT_KEY,
+            quantityTextView.text.toString()
+        )
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        quantityTextView.text = savedInstanceState.getString(QUANTITY_TEXT_KEY)
     }
 
     private fun chooseFile() {
@@ -274,16 +301,9 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         val title = titleEditText.text.toString().trim()
         val price = priceEditText.text.toString().trim()
         val location = locationEditText.text.toString().trim()
-        val quantity = quantityEditText.text.toString().trim()
+        val quantity = quantityTextView.text.toString().trim()
         val supplier = supplierEditText.text.toString().trim()
         val description = descriptionEditText.text.toString().trim()
-        val image: BitmapDrawable = imageImageView.drawable as BitmapDrawable
-
-        val bitmap = image.bitmap
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-
-        val byteImage = stream.toByteArray()
 
         // store image into database
 //        try {
@@ -307,14 +327,14 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             return
         }
 
-        if (currentUri == null &&
-            TextUtils.isEmpty(title) && TextUtils.isEmpty(price) && TextUtils.isEmpty(location) && TextUtils.isEmpty(
-                quantity
-            )
-            && TextUtils.isEmpty(supplier) && TextUtils.isEmpty(description) && currency == CURRENCY_SOM
-        ) {
-            return
-        }
+//        if (currentUri == null &&
+//            TextUtils.isEmpty(title) && TextUtils.isEmpty(price) && TextUtils.isEmpty(location) && TextUtils.isEmpty(
+//                quantity
+//            )
+//            && TextUtils.isEmpty(supplier) && TextUtils.isEmpty(description) && currency == CURRENCY_SOM
+//        ) {
+//            return
+//        }
 
         val intPrice = Integer.parseInt(price)
         val intQuantity = Integer.parseInt(price)
@@ -322,6 +342,13 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         if (intPrice < 0 || intQuantity < 0) {
             Toast.makeText(this, "Price or Quantity is not valid", Toast.LENGTH_LONG).show()
         }
+
+        val image: BitmapDrawable = imageImageView.drawable as BitmapDrawable
+        val bitmap = image.bitmap
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+
+        val byteImage = stream.toByteArray()
 
         val values: ContentValues = ContentValues().apply {
             put(COLUMN_INVENTORY_TITLE, title)
@@ -396,17 +423,19 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             val quantity = data.getString(data.getColumnIndex(COLUMN_INVENTORY_QUANTITY));
             val supplier = data.getString(data.getColumnIndex(COLUMN_INVENTORY_SUPPLIER));
             val description = data.getString(data.getColumnIndex(COLUMN_INVENTORY_DESCRIPTION));
+            val image = data.getBlob(data.getColumnIndex(COLUMN_INVENTORY_IMAGE))
 
-            if (data.getBlob(data.getColumnIndex(COLUMN_INVENTORY_IMAGE)) != null) {
-                val image = data.getBlob(data.getColumnIndex(COLUMN_INVENTORY_IMAGE));
+            if (image != null) {
                 val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
                 imageImageView.setImageBitmap(bitmap)
+            } else {
+                imageImageView.setImageResource(R.drawable.image_placeholder)
             }
 
             titleEditText.setText(title)
             priceEditText.setText(price)
             locationEditText.setText(location)
-            quantityEditText.setText(quantity)
+            quantityTextView.setText(quantity)
             supplierEditText.setText(supplier)
             descriptionEditText.setText(description)
         }
@@ -416,7 +445,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         titleEditText.setText("")
         priceEditText.setText("")
         locationEditText.setText("")
-        quantityEditText.setText("")
+        quantityTextView.setText("")
         supplierEditText.setText("")
         descriptionEditText.setText("")
         imageImageView.setImageResource(R.drawable.image_placeholder)
