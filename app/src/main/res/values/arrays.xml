@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <!-- These are the options displayed in the gender drop-down Spinner -->
+    <string-array name="array_currency_options">
+        <item>@string/currency_som</item>
+        <item>@string/currency_dollar</item>
+        <item>@string/currency_ruble</item>
+        <item>@string/currency_tenge</item>
+    </string-array>
+</resources>

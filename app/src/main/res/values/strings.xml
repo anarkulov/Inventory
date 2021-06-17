@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Inventory</string>
+    <string name="empty_view_subtitle_text">Get started by adding some inventory</string>
+    <string name="empty_view_title_text">There is no inventory</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+
+    <string name="currency_som">som</string>
+    <string name="currency_dollar">dollar</string>
+    <string name="currency_tenge">tenge</string>
+    <string name="currency_ruble">ruble</string>
+    <string name="action_insert_dummy_data">Insert dummy data</string>
+    <string name="action_delete_all_entries">Delete all inventories</string>
+    <string name="editor_insert_failed">Failed to insert data</string>
+    <string name="editor_insert_successful">Successfully added data</string>
+    <string name="editor_update_failed">Could not save changes</string>
+    <string name="editor_update_successful">Changes wrere successfully saved</string>
+    <string name="unsaved_changes_dialog_msg">Discard your changes and quit?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
 </resources>
