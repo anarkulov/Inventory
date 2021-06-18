@@ -1,9 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.Inventory" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="android:itemBackground">@color/Powder</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:colorBackground">@color/Powder</item>
+
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_200</item>
+        <item name="colorPrimary">@color/Prime</item>
+        <item name="colorPrimaryVariant">@color/Powder</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/teal_200</item>

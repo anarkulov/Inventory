@@ -7,7 +7,9 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.TextUtils
@@ -22,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.erzhan.inventory.R
 import com.erzhan.inventory.activities.CatalogActivity.Companion.INVENTORY_KEY
 import com.erzhan.inventory.data.Inventory
@@ -35,13 +38,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
+
 class EditorActivity : AppCompatActivity(), CoroutineScope {
 
     companion object {
+        private const val IMAGE_SAVE_KEY = "IMAGE SAVE KEY"
         private const val QUANTITY_SAVE_KEY = "QUANTITY TEXT KEY"
         private const val INVENTORY_ID_SAVE_KEY = "INVENTORY ID KEY"
         private const val GET_IMAGE_REQUEST_CODE = 1000
@@ -154,24 +160,38 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
         super.onDestroy()
         job.cancel()
     }
+
+    private fun drawableToByteArray(bitmap: Bitmap): ByteArray {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        return stream.toByteArray()
+    }
     override fun onSaveInstanceState(outState: Bundle) {
+
+        if (imageImageView.drawable != null) {
+            val bitmap = imageImageView.drawable.toBitmap()
+            val imageByteArray: ByteArray = drawableToByteArray(bitmap)
+            outState.putByteArray(IMAGE_SAVE_KEY, imageByteArray)
+        }
         super.onSaveInstanceState(outState)
         outState.putString(
             QUANTITY_SAVE_KEY,
             quantityTextView.text.toString()
         )
-
         outState.putString(
             INVENTORY_ID_SAVE_KEY,
             inventoryId.toString()
         )
-
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         quantityTextView.text = savedInstanceState.getString(QUANTITY_SAVE_KEY)
+
         savedInstanceState.getString(INVENTORY_ID_SAVE_KEY).also { inventoryId = Integer.parseInt(it!!) }
+        val byteArray = savedInstanceState.getByteArray(IMAGE_SAVE_KEY)
+        val bitmapImage = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
+        imageImageView.setImageBitmap(bitmapImage)
     }
 
     private fun chooseFile() {

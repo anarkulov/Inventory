@@ -10,17 +10,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-
         <ImageView
             android:id="@+id/imageViewEditId"
             android:layout_width="250dp"
             android:layout_height="160dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:scaleType="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:src="@drawable/image_placeholder"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:src="@drawable/ic_image"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@drawable/image_border"
+            />
 
         <TextView
             android:layout_width="wrap_content"
@@ -28,6 +29,7 @@
             android:layout_marginStart="16dp"
             android:text="@string/choose_an_image"
             android:textSize="18sp"
+            android:textColor="@color/gray"
             app:layout_constraintBottom_toBottomOf="@+id/chooseImageButtonId"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/chooseImageButtonId" />
@@ -49,6 +51,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="20dp"
             android:text="@string/title"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
 
@@ -60,6 +63,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:minWidth="150dp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
             app:layout_constraintBottom_toBottomOf="@+id/textView"
             app:layout_constraintTop_toTopOf="@+id/textView"
             app:layout_constraintStart_toEndOf="@id/textView"
@@ -71,6 +76,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:spinnerMode="dropdown"
+            android:backgroundTint="@color/white"
+            android:popupBackground="@color/Powder"
             app:layout_constraintBottom_toBottomOf="@+id/priceEditTextId"
             app:layout_constraintStart_toEndOf="@+id/priceEditTextId"
             app:layout_constraintTop_toTopOf="@+id/priceEditTextId" />
@@ -82,6 +89,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="20dp"
             android:text="@string/price"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textView"/>
@@ -93,8 +101,9 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:inputType="number"
-            android:textColor="@color/black"
             android:textSize="18sp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
             app:layout_constraintStart_toEndOf="@+id/PriceTextView"
             app:layout_constraintBottom_toBottomOf="@+id/PriceTextView"
             app:layout_constraintTop_toBottomOf="@+id/PriceTextView"
@@ -108,6 +117,7 @@
             android:layout_marginStart="16dp"
             android:minWidth="150dp"
             android:text="@string/quantity"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/PriceTextView" />
@@ -128,16 +138,14 @@
                 android:id="@+id/quantity_sub"
                 android:layout_width="45dp"
                 android:layout_height="40dp"
-                android:background="@drawable/round_button"
                 android:text="@string/decrement" />
 
             <TextView
                 android:id="@+id/quantityText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
-                android:textColor="@android:color/black"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
                 android:textSize="18sp"
                 android:text="@string/zero" />
 
@@ -145,7 +153,6 @@
                 android:id="@+id/quantity_add"
                 android:layout_width="45dp"
                 android:layout_height="40dp"
-                android:background="@drawable/round_button"
                 android:text="@string/increment" />
 
         </LinearLayout>
@@ -159,6 +166,7 @@
             android:minWidth="150dp"
             android:text="@string/location"
             android:textSize="18sp"
+            android:textColor="@color/gray"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/quantity" />
 
@@ -170,6 +178,8 @@
             android:layout_marginStart="16dp"
             android:minWidth="150dp"
             android:textSize="18sp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
             app:layout_constraintStart_toEndOf="@id/locationTextView"
             app:layout_constraintBottom_toBottomOf="@+id/locationTextView"
             app:layout_constraintTop_toTopOf="@+id/locationTextView" />
@@ -183,9 +193,9 @@
             android:minWidth="150dp"
             android:text="@string/supplier"
             android:textSize="18sp"
+            android:textColor="@color/gray"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/locationTextView" />
-
 
         <EditText
             android:id="@+id/supplierEditTextId"
@@ -194,6 +204,8 @@
             android:layout_marginStart="16dp"
             android:minWidth="100dp"
             android:textSize="18sp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
             app:layout_constraintBottom_toBottomOf="@id/supplierTextView"
             app:layout_constraintStart_toEndOf="@+id/supplierTextView"
             app:layout_constraintTop_toTopOf="@+id/supplierTextView" />
@@ -206,6 +218,7 @@
             android:layout_marginTop="20dp"
             android:minWidth="150dp"
             android:text="@string/description"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/supplierTextView" />
@@ -215,6 +228,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:textSize="18sp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/descriptionTextView" />
 
