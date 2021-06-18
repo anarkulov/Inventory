@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.database.CursorWindow
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -37,6 +38,7 @@ import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_DOLLA
 import com.erzhan.inventory.data.InventoryDbHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.Field
 
 class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItemClickListener,
     LoaderManager.LoaderCallbacks<Cursor> {

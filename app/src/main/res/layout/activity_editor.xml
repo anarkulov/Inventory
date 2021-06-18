@@ -67,8 +67,9 @@
 
         <Spinner
             android:id="@+id/spinnerEditId"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:spinnerMode="dropdown"
             app:layout_constraintBottom_toBottomOf="@+id/priceEditTextId"
             app:layout_constraintStart_toEndOf="@+id/priceEditTextId"
@@ -127,6 +128,7 @@
                 android:id="@+id/quantity_sub"
                 android:layout_width="45dp"
                 android:layout_height="40dp"
+                android:background="@drawable/round_button"
                 android:text="@string/decrement" />
 
             <TextView
@@ -143,6 +145,7 @@
                 android:id="@+id/quantity_add"
                 android:layout_width="45dp"
                 android:layout_height="40dp"
+                android:background="@drawable/round_button"
                 android:text="@string/increment" />
 
         </LinearLayout>
@@ -197,7 +200,7 @@
 
         <TextView
             android:id="@+id/descriptionTextView"
-            android:layout_width="100dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="20dp"

@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.UriMatcher
 import android.database.Cursor
+import android.database.CursorWindow
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.util.Log
@@ -23,6 +24,8 @@ import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CONTENT_LIST_T
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.PATH_INVENTORY
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.TABLE_NAME
 import com.erzhan.inventory.data.InventoryContract.InventoryEntry.isValidCurrency
+import java.lang.reflect.Field
+
 
 class InventoryProvider : ContentProvider() {
 
@@ -57,6 +60,14 @@ class InventoryProvider : ContentProvider() {
         val database: SQLiteDatabase = dbHelper.readableDatabase
 
         lateinit var cursor: Cursor
+
+        try {
+            val field: Field = CursorWindow::class.java.getDeclaredField("sCursorWindowSize")
+            field.isAccessible = true
+            field.set(null, 10 * 1024 * 1024) //the 10MB is the new size
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         val match: Int = uriMatcher.match(uri)
 

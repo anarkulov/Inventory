@@ -75,6 +75,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
     val GET_IMAGE = 1
     var number = 0
     val QUANTITY_TEXT_KEY = "KEY"
+    val URI_TEXT_KEY = "Uri key"
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,9 +105,11 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             quantityTextView.text = number.toString()
         }
         decrementButton = findViewById(R.id.quantity_sub)
-        descriptionEditText.setOnClickListener {
+        decrementButton.setOnClickListener {
             number = quantityTextView.text.toString().toInt()
-            number--
+            if (number > 0) {
+                number--
+            }
             quantityTextView.text = number.toString()
         }
 
@@ -136,11 +139,18 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             QUANTITY_TEXT_KEY,
             quantityTextView.text.toString()
         )
+
+        outState.putString(
+            URI_TEXT_KEY,
+            currentUri.toString()
+        )
+
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         quantityTextView.text = savedInstanceState.getString(QUANTITY_TEXT_KEY)
+        currentUri = Uri.parse(savedInstanceState.getString(URI_TEXT_KEY))
     }
 
     private fun chooseFile() {
@@ -206,29 +216,28 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             R.array.array_currency_options, android.R.layout.simple_spinner_item
         )
 
-        // Specify dropdown layout style - simple list view with 1 item per line
         currencySpinnerAdapter.setDropDownViewResource(android.R.layout.simple_dropdown_item_1line)
 
-        // Apply the adapter to the spinner
         currencySpinner.adapter = currencySpinnerAdapter
 
-        // Set the integer mSelected to the constant values
         currencySpinner.onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View,
+                parent: AdapterView<*>?,
+                view: View?,
                 position: Int,
                 id: Long
             ) {
-                val selection = parent.getItemAtPosition(position) as String
+                val selection = position.let { parent?.getItemAtPosition(it) } as String
                 currency = if (selection == getString(R.string.currency_som)) {
                     CURRENCY_SOM
                 } else if (selection == getString(R.string.currency_dollar)) {
                     CURRENCY_DOLLAR
                 } else if (selection == getString(R.string.currency_ruble)) {
                     CURRENCY_RUBLE
-                } else {
+                } else if (selection == getString(R.string.currency_tenge)){
                     CURRENCY_TENGE
+                } else {
+                    currency
                 }
             }
 
@@ -435,7 +444,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             titleEditText.setText(title)
             priceEditText.setText(price)
             locationEditText.setText(location)
-            quantityTextView.setText(quantity)
+            quantityTextView.text = quantity
             supplierEditText.setText(supplier)
             descriptionEditText.setText(description)
         }
@@ -445,7 +454,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         titleEditText.setText("")
         priceEditText.setText("")
         locationEditText.setText("")
-        quantityTextView.setText("")
+        quantityTextView.text = ""
         supplierEditText.setText("")
         descriptionEditText.setText("")
         imageImageView.setImageResource(R.drawable.image_placeholder)
