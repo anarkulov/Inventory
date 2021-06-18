@@ -21,9 +21,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <provider
-            android:authorities="com.erzhan.inventory"
-            android:name=".data.InventoryProvider"
-            android:exported="false"/>
     </application>
 </manifest>

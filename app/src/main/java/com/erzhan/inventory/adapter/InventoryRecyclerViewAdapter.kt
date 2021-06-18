@@ -1,49 +1,36 @@
 package com.erzhan.inventory.adapter
 
 import android.content.Context
-import android.database.Cursor
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.database.getBlobOrNull
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.erzhan.inventory.R
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_CURRENCY
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_ID
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_IMAGE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_LOCATION
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_PRICE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_TITLE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.getBitmap
+import com.erzhan.inventory.data.Inventory
 
 
-class InventoryRecyclerViewAdapter(context: Context,
-                                   cursor: Cursor?,
-                                   onItemCLickListener: OnItemClickListener
+class InventoryRecyclerViewAdapter(
+    context: Context,
+    inventoryList: List<Inventory>,
+    onItemCLickListener: OnItemClickListener
 ) :
     RecyclerView.Adapter<InventoryRecyclerViewAdapter.MyViewHolder>() {
 
     private var context: Context
-    private var cursor: Cursor? = null
-    private var dataValid: Boolean = false
+    private var inventoryList: List<Inventory>
     private val onItemClickListener: OnItemClickListener
 
     init {
         this.context = context
+        this.inventoryList = inventoryList
         this.onItemClickListener = onItemCLickListener
-        init(cursor)
     }
 
-    private fun init(cursor: Cursor?) {
-        val cursorPresent = cursor != null
-        this.cursor = cursor
-        dataValid = cursorPresent
+    fun updateRecyclerView(){
+        notifyDataSetChanged()
     }
 
     interface OnItemClickListener {
@@ -78,7 +65,6 @@ class InventoryRecyclerViewAdapter(context: Context,
         override fun onClick(v: View) {
             onItemClickListener.onItemClick(inventoryId)
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
@@ -89,41 +75,30 @@ class InventoryRecyclerViewAdapter(context: Context,
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        if (!dataValid){
-            throw IllegalStateException("this should only be called when the cursor is valid")
-        }
 
-        if (!cursor?.moveToPosition(position)!!){
-            throw IllegalStateException("couldn't move cursor to position $position")
-        }
+        val title = inventoryList[position].title
+        val price = inventoryList[position].price
+        val location = inventoryList[position].location
+        val currency = inventoryList[position].currency
+        val id = inventoryList[position].id
 
-        val title = cursor!!.getString(cursor!!.getColumnIndex(COLUMN_INVENTORY_TITLE))
-        val price = cursor!!.getString(cursor!!.getColumnIndex(COLUMN_INVENTORY_PRICE));
-        val location = cursor!!.getString(cursor!!.getColumnIndex(COLUMN_INVENTORY_LOCATION));
-        val currency = cursor!!.getInt(cursor!!.getColumnIndex(COLUMN_INVENTORY_CURRENCY));
-        val id = cursor?.getInt(cursor!!.getColumnIndex(COLUMN_INVENTORY_ID));
-
-        if (cursor!!.getBlob(cursor!!.getColumnIndex(COLUMN_INVENTORY_IMAGE)) != null) {
-            val image = cursor!!.getBlob(cursor!!.getColumnIndex(COLUMN_INVENTORY_IMAGE));
-            val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
-            holder.imageResource.setImageBitmap(bitmap)
-        }
-
-
-        val image = cursor!!.getBlob(cursor!!.getColumnIndex(COLUMN_INVENTORY_IMAGE))
-
-        if (image != null){
-            val bitmap = getBitmap(image)
-            holder.imageResource.setImageBitmap(bitmap)
+        if (inventoryList[position].image != null) {
+            Glide
+                .with(context)
+                .asBitmap()
+                .load(inventoryList[position].image)
+                .into(holder.imageResource)
         } else {
-            holder.imageResource.setImageResource(R.drawable.image_placeholder)
+            Glide
+                .with(context)
+                .asBitmap()
+                .load(R.drawable.image_placeholder)
+                .into(holder.imageResource)
         }
 
-        if (id != null) {
-            holder.inventoryId = id
-        }
+        holder.inventoryId = id
         holder.titleTextView.text = title
-        holder.priceTextView.text = price
+        holder.priceTextView.text = price.toString()
         holder.locationTextView.text = location
 
         when (currency) {
@@ -143,29 +118,6 @@ class InventoryRecyclerViewAdapter(context: Context,
     }
 
     override fun getItemCount(): Int {
-        return if (dataValid && cursor != null) {
-            cursor!!.count
-        } else 0
-    }
-
-    fun changeCursor(data: Cursor?) {
-        swapCursor(data)?.close()
-    }
-
-    private fun swapCursor(newCursor: Cursor?): Cursor? {
-        if (newCursor == cursor) {
-            return null
-        }
-
-        val oldCursor = cursor
-        cursor = newCursor
-
-        if (newCursor != null) {
-            dataValid = true
-            notifyDataSetChanged()
-        } else {
-            dataValid = false
-        }
-        return oldCursor
+        return inventoryList.size
     }
 }

@@ -1,84 +1,80 @@
 package com.erzhan.inventory.activities
 
-import android.Manifest
-import android.content.ContentUris
-import android.content.ContentValues
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.database.Cursor
-import android.database.CursorWindow
-import android.graphics.Bitmap
+
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.loader.app.LoaderManager
-import androidx.loader.content.CursorLoader
-import androidx.loader.content.Loader
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.erzhan.inventory.R
 import com.erzhan.inventory.adapter.InventoryRecyclerViewAdapter
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_CURRENCY
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_DESCRIPTION
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_ID
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_IMAGE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_LOCATION
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_PRICE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_QUANTITY
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_SUPPLIER
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_TITLE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CONTENT_URI
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_DOLLAR
-import com.erzhan.inventory.data.InventoryDbHelper
+import com.erzhan.inventory.data.Inventory
+import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_DOLLAR
+import com.erzhan.inventory.data.InventoryDatabase
+import com.erzhan.inventory.data.toast
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import java.io.ByteArrayOutputStream
-import java.lang.reflect.Field
+import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 
-class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItemClickListener,
-    LoaderManager.LoaderCallbacks<Cursor> {
+class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItemClickListener, CoroutineScope{
 
-    private val LOG = "Catalog Activity LOG"
+    companion object {
+        const val INVENTORY_KEY = "INVENTORY_ID"
+    }
 
-    val INVENTORY_LOADER = 0
-    private lateinit var dbHelper: InventoryDbHelper
+    private lateinit var inventoryRecyclerViewAdapter: InventoryRecyclerViewAdapter
     private lateinit var addFloatingActionButton: FloatingActionButton
     private lateinit var inventoryRecyclerView: RecyclerView
-    private lateinit var inventoryRecyclerViewAdapter: InventoryRecyclerViewAdapter
+    private lateinit var inventoryList: ArrayList<Inventory>
+
+    private lateinit var job: Job
+
+    // CoroutineContext
+    override val coroutineContext: CoroutineContext
+        get() = job + Dispatchers.Main
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        job = Job()
         addFloatingActionButton = findViewById(R.id.addFloatingActionButtonId);
         addFloatingActionButton.setOnClickListener {
             val intent = Intent(this, EditorActivity::class.java)
             startActivity(intent)
         }
 
-        dbHelper = InventoryDbHelper(this)
+// RecyclerView
         inventoryRecyclerView = findViewById(R.id.inventoryRecyclerViewId)
         inventoryRecyclerView.layoutManager = GridLayoutManager(this, 2)
-        inventoryRecyclerViewAdapter = InventoryRecyclerViewAdapter(this, null, this)
+        inventoryList = ArrayList()
 
-        inventoryRecyclerView.adapter = inventoryRecyclerViewAdapter
-
-        supportLoaderManager.initLoader(INVENTORY_LOADER, null, this)
+        launch {
+            this@CatalogActivity.let {
+                inventoryList = InventoryDatabase(it).getInventoryDao().getAllInventory() as ArrayList<Inventory>
+                inventoryRecyclerViewAdapter = InventoryRecyclerViewAdapter(it, inventoryList, it)
+                inventoryRecyclerView.adapter = inventoryRecyclerViewAdapter
+            }
+        }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
+
+// Open Item Details on click
     override fun onItemClick(inventoryId: Int) {
         val intent = Intent(this, DetailActivity::class.java)
-        val currentUri = ContentUris.withAppendedId(CONTENT_URI, inventoryId.toLong())
-
-        intent.data = currentUri
+        intent.putExtra(INVENTORY_KEY, inventoryId)
         startActivity(intent)
     }
 
+// Set menu items
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_catalog, menu)
         return true
@@ -86,68 +82,36 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_insert_dummy_data) {
-            insertDummyPet()
+            insertDummyData()
             return true
         } else if (item.itemId == R.id.action_delete_all_entries) {
-            deletePets()
+            deleteAllData()
             return true
         }
         return super.onOptionsItemSelected(item)
     }
 
-    private fun insertDummyPet() {
-
-        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.image_placeholder)
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-        val byteImage = stream.toByteArray()
-
-        val values = ContentValues().apply {
-            put(COLUMN_INVENTORY_TITLE, "Nothing")
-            put(COLUMN_INVENTORY_PRICE, 300)
-            put(COLUMN_INVENTORY_CURRENCY, CURRENCY_DOLLAR)
-            put(COLUMN_INVENTORY_QUANTITY, 122)
-            put(COLUMN_INVENTORY_SUPPLIER, "Sup inc")
-            put(COLUMN_INVENTORY_LOCATION, "Bishkek")
-            put(COLUMN_INVENTORY_DESCRIPTION, "Description is a description")
-            put(COLUMN_INVENTORY_IMAGE, byteImage)
+    private fun insertDummyData() {
+        launch {
+            this@CatalogActivity.let {
+                val bitmapImage = BitmapFactory.decodeResource(resources, R.drawable.image_placeholder)
+                val newInventoryDummyData = Inventory(
+                    "Dummy Title", 100, CURRENCY_DOLLAR,
+                    2, "Bishkek", "D inc",
+                    "This is the sample data for this item", bitmapImage
+                )
+                InventoryDatabase(it).getInventoryDao().addInventory(newInventoryDummyData)
+                toast("Successfully inserted")
+            }
         }
-
-        contentResolver.insert(CONTENT_URI, values)
     }
 
-    private fun deletePets() {
-        val rowId = contentResolver.delete(CONTENT_URI, null, null)
-        Toast.makeText(this, "$rowId rows deleted from pet database", Toast.LENGTH_LONG).show()
-    }
-
-    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
-        val projection = arrayOf(
-            COLUMN_INVENTORY_ID,
-            COLUMN_INVENTORY_TITLE,
-            COLUMN_INVENTORY_PRICE,
-            COLUMN_INVENTORY_LOCATION,
-            COLUMN_INVENTORY_CURRENCY,
-            COLUMN_INVENTORY_QUANTITY,
-            COLUMN_INVENTORY_SUPPLIER,
-            COLUMN_INVENTORY_DESCRIPTION,
-            COLUMN_INVENTORY_IMAGE
-        )
-
-        return CursorLoader(this, CONTENT_URI, projection, null, null, null)
-    }
-
-    override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {
-        inventoryRecyclerViewAdapter.changeCursor(data)
-//        if (InventoryRecyclerViewAdapter.getItemCount() === 0) {
-//            emptyView.setVisibility(View.VISIBLE)
-//        } else {
-//            emptyView.setVisibility(View.GONE)
-//        }
-    }
-
-    override fun onLoaderReset(loader: Loader<Cursor>) {
-        inventoryRecyclerViewAdapter.changeCursor(null)
-//        emptyView.setVisibility(View.VISIBLE)
+    private fun deleteAllData() {
+        launch {
+            this@CatalogActivity.let {
+                InventoryDatabase(it).getInventoryDao().deleteAll(inventoryList)
+                toast("Successfully deleted")
+            }
+        }
     }
 }

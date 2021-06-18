@@ -3,16 +3,11 @@ package com.erzhan.inventory.activities
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ContentUris
-import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.TextUtils
@@ -27,60 +22,59 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
 import androidx.core.content.ContextCompat
-import androidx.loader.app.LoaderManager
-import androidx.loader.content.CursorLoader
-import androidx.loader.content.Loader
 import com.erzhan.inventory.R
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_CURRENCY
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_DESCRIPTION
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_ID
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_IMAGE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_LOCATION
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_PRICE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_QUANTITY
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_SUPPLIER
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.COLUMN_INVENTORY_TITLE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CONTENT_URI
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_DOLLAR
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_RUBLE
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_SOM
-import com.erzhan.inventory.data.InventoryContract.InventoryEntry.CURRENCY_TENGE
-import java.io.ByteArrayOutputStream
+import com.erzhan.inventory.activities.CatalogActivity.Companion.INVENTORY_KEY
+import com.erzhan.inventory.data.Inventory
+import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_DOLLAR
+import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_RUBLE
+import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_SOM
+import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_TENGE
+import com.erzhan.inventory.data.InventoryDatabase
+import com.erzhan.inventory.data.toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 import java.io.IOException
+import kotlin.coroutines.CoroutineContext
 
-class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
+class EditorActivity : AppCompatActivity(), CoroutineScope {
 
-    lateinit var currencySpinner: Spinner
-    var currency = 0
+    companion object {
+        private const val QUANTITY_SAVE_KEY = "QUANTITY TEXT KEY"
+        private const val INVENTORY_ID_SAVE_KEY = "INVENTORY ID KEY"
+        private const val GET_IMAGE_REQUEST_CODE = 1000
+        private const val READ_EXTERNAL_STORAGE_PERMISSION_CODE = 1001
+    }
 
-    lateinit var titleEditText: EditText
-    lateinit var priceEditText: EditText
-    lateinit var quantityTextView: TextView
-    lateinit var supplierEditText: EditText
-    lateinit var descriptionEditText: EditText
+    private var inventoryId = -1
+    private var currency = 0
+    private var number = 0
+    private var inventoryHasChanged = false
+
+    private lateinit var titleEditText: EditText
+    private lateinit var priceEditText: EditText
+    private lateinit var quantityTextView: TextView
     private lateinit var locationEditText: EditText
-    lateinit var incrementButton: Button
-    lateinit var decrementButton: Button
+    private lateinit var supplierEditText: EditText
+    private lateinit var descriptionEditText: EditText
+    private lateinit var imageImageView: ImageView
+    private lateinit var incrementButton: Button
+    private lateinit var decrementButton: Button
+    private lateinit var chooseImageButton: Button
+    private lateinit var currencySpinner: Spinner
 
-    lateinit var imageImageView: ImageView
-    lateinit var chooseImageButton: Button
-    lateinit var filePath: Uri
-//    lateinit var imageProjection : Array<String>
+    private lateinit var job: Job
 
-    var currentUri: Uri? = null
-    private val EXISTING_INVENTORY_LOADER_EDIT = 2;
-    var inventoryHasChanged = false
-    val READ_EXTERNAL_STORAGE = 1
-    val GET_IMAGE = 1
-    var number = 0
-    val QUANTITY_TEXT_KEY = "KEY"
-    val URI_TEXT_KEY = "Uri key"
+    override val coroutineContext: CoroutineContext
+        get() = job + Dispatchers.Main
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
+        job = Job()
 
         currencySpinner = findViewById(R.id.spinnerEditId)
 
@@ -94,7 +88,11 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         chooseImageButton = findViewById(R.id.chooseImageButtonId)
         chooseImageButton.setOnClickListener {
             getPermission()
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
                 chooseFile()
             }
         }
@@ -119,66 +117,87 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         supplierEditText.setOnTouchListener(touchListener)
         descriptionEditText.setOnTouchListener(touchListener)
         locationEditText.setOnTouchListener(touchListener)
+        chooseImageButton.setOnTouchListener(touchListener)
 
-        val intent = intent
-        currentUri = intent.data
+        val bundle = intent.extras
+        if (bundle != null) {
+            inventoryId = bundle.getInt(INVENTORY_KEY)
+            toast("Detail: $inventoryId")
 
-        if (currentUri != null) {
-            title = "Edit"
-            supportLoaderManager.initLoader(EXISTING_INVENTORY_LOADER_EDIT, null, this)
-            Toast.makeText(this, "Editor: ${ContentUris.parseId(currentUri!!)}", Toast.LENGTH_LONG)
-                .show()
+            if (inventoryId != -1) {
+                launch {
+                    this@EditorActivity.let {
+                        val inventory = InventoryDatabase(it).getInventoryDao().getInventoryById(
+                            inventoryId
+                        )
+                        titleEditText.setText(inventory.title)
+                        priceEditText.setText(inventory.price.toString())
+                        quantityTextView.text = inventory.quantity.toString()
+                        supplierEditText.setText(inventory.supplier)
+                        descriptionEditText.setText(inventory.description)
+                        locationEditText.setText(inventory.location)
+
+                        if (inventory.image != null) {
+                            imageImageView.setImageBitmap(inventory.image)
+                        }
+                        toast("Successfully loaded data")
+                    }
+                }
+            } else {
+                toast("Failed to load data: Invalid id")
+            }
         }
-
         setupSpinner()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(
-            QUANTITY_TEXT_KEY,
+            QUANTITY_SAVE_KEY,
             quantityTextView.text.toString()
         )
 
         outState.putString(
-            URI_TEXT_KEY,
-            currentUri.toString()
+            INVENTORY_ID_SAVE_KEY,
+            inventoryId.toString()
         )
 
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        quantityTextView.text = savedInstanceState.getString(QUANTITY_TEXT_KEY)
-        currentUri = Uri.parse(savedInstanceState.getString(URI_TEXT_KEY))
+        quantityTextView.text = savedInstanceState.getString(QUANTITY_SAVE_KEY)
+        savedInstanceState.getString(INVENTORY_ID_SAVE_KEY).also { inventoryId = Integer.parseInt(it!!) }
     }
 
     private fun chooseFile() {
         val intent = Intent()
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
-//        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-//        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         Intent.createChooser(intent, "Choose an Image")
-        startActivityForResult(intent, GET_IMAGE)
+        startActivityForResult(intent, GET_IMAGE_REQUEST_CODE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == GET_IMAGE && resultCode == Activity.RESULT_OK){
+        if (requestCode == GET_IMAGE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             if (data != null) {
-                filePath = data.data!!
+                val filePath = data.data!!
                 var bitmap: Bitmap? = null
                 try {
                     bitmap = MediaStore.Images.Media.getBitmap(contentResolver, filePath)
-                } catch (e: FileNotFoundException){
+                } catch (e: FileNotFoundException) {
                     e.printStackTrace();
                 } catch (e: IOException) {
                     e.printStackTrace();
                 }
 
-                if (bitmap != null){
+                if (bitmap != null) {
                     imageImageView.setImageBitmap(bitmap)
                 }
             }
@@ -186,8 +205,16 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
     }
 
     private fun getPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE)
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                READ_EXTERNAL_STORAGE_PERMISSION_CODE
+            )
             return
         }
     }
@@ -199,7 +226,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            READ_EXTERNAL_STORAGE -> {
+            READ_EXTERNAL_STORAGE_PERMISSION_CODE -> {
 
                 if (grantResults.isNotEmpty()
                     && grantResults[0] == PackageManager.PERMISSION_GRANTED
@@ -234,7 +261,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
                     CURRENCY_DOLLAR
                 } else if (selection == getString(R.string.currency_ruble)) {
                     CURRENCY_RUBLE
-                } else if (selection == getString(R.string.currency_tenge)){
+                } else if (selection == getString(R.string.currency_tenge)) {
                     CURRENCY_TENGE
                 } else {
                     currency
@@ -254,7 +281,7 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         }
 
         val discardButtonClickListener =
-            DialogInterface.OnClickListener { dialogInterface, i ->
+            DialogInterface.OnClickListener { _, _ ->
                 finish()
             }
 
@@ -314,19 +341,6 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         val supplier = supplierEditText.text.toString().trim()
         val description = descriptionEditText.text.toString().trim()
 
-        // store image into database
-//        try {
-////            val fis = contentResolver.openInputStream(filePath)
-////            val buf = BufferedInputStream(fis)
-////            val bitmap = BitmapFactory.decodeStream(buf)
-////            Log.v("LOG EDITOR", fis.toString())
-////            image = getBytes(bitmap)
-//
-//        } catch (e: FileNotFoundException){
-//            Log.v("LOG EDITOR", e.toString())
-//        }
-
-
         if (TextUtils.isEmpty(title) || TextUtils.isEmpty(price) || TextUtils.isEmpty(location) || TextUtils.isEmpty(
                 quantity
             )
@@ -336,15 +350,6 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
             return
         }
 
-//        if (currentUri == null &&
-//            TextUtils.isEmpty(title) && TextUtils.isEmpty(price) && TextUtils.isEmpty(location) && TextUtils.isEmpty(
-//                quantity
-//            )
-//            && TextUtils.isEmpty(supplier) && TextUtils.isEmpty(description) && currency == CURRENCY_SOM
-//        ) {
-//            return
-//        }
-
         val intPrice = Integer.parseInt(price)
         val intQuantity = Integer.parseInt(price)
 
@@ -353,111 +358,37 @@ class EditorActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor
         }
 
         val image: BitmapDrawable = imageImageView.drawable as BitmapDrawable
-        val bitmap = image.bitmap
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        val bitmapImage = image.bitmap
 
-        val byteImage = stream.toByteArray()
 
-        val values: ContentValues = ContentValues().apply {
-            put(COLUMN_INVENTORY_TITLE, title)
-            put(COLUMN_INVENTORY_PRICE, intPrice)
-            put(COLUMN_INVENTORY_CURRENCY, currency)
-            put(COLUMN_INVENTORY_QUANTITY, intQuantity)
-            put(COLUMN_INVENTORY_SUPPLIER, supplier)
-            put(COLUMN_INVENTORY_LOCATION, location)
-            put(COLUMN_INVENTORY_DESCRIPTION, description)
-            put(COLUMN_INVENTORY_IMAGE, byteImage)
-        }
+        if (inventoryId == -1) {
+            launch {
+                this@EditorActivity.let {
+                    val inventory = Inventory(
+                        title, intPrice, currency, intQuantity,
+                        location, supplier, description, bitmapImage
+                    )
 
-        if (currentUri == null) {
-            val newUri = contentResolver.insert(CONTENT_URI, values)
+                    InventoryDatabase(it).getInventoryDao().addInventory(inventory)
+                    toast("Successfully inserted")
+                }
 
-            if (newUri == null) {
-                Toast.makeText(
-                    this, getString(R.string.editor_insert_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Toast.makeText(
-                    this, getString(R.string.editor_insert_successful),
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         } else {
-            val rowsAffected = contentResolver.update(currentUri!!, values, null, null)
+            launch {
+                this@EditorActivity.let {
 
-            if (rowsAffected == 0) {
-                Toast.makeText(
-                    this, getString(R.string.editor_update_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Toast.makeText(
-                    this, getString(R.string.editor_update_successful),
-                    Toast.LENGTH_SHORT
-                ).show()
+                    val inventory = Inventory(
+                        title, intPrice, currency, intQuantity,
+                        location, supplier, description, bitmapImage
+                    )
+                    inventory.id = inventoryId
+                    InventoryDatabase(it).getInventoryDao().updateInventory(inventory)
+                    toast("Successfully updated")
+                }
             }
         }
         finish()
-    }
-
-    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
-        val projection = arrayOf(
-            COLUMN_INVENTORY_ID,
-            COLUMN_INVENTORY_TITLE,
-            COLUMN_INVENTORY_PRICE,
-            COLUMN_INVENTORY_LOCATION,
-            COLUMN_INVENTORY_CURRENCY,
-            COLUMN_INVENTORY_QUANTITY,
-            COLUMN_INVENTORY_SUPPLIER,
-            COLUMN_INVENTORY_DESCRIPTION,
-            COLUMN_INVENTORY_IMAGE
-        )
-
-        return CursorLoader(
-            this, currentUri!!, projection, null, null, null
-        )
-    }
-
-    override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {
-        if (data == null || data.count < 1) {
-            return
-        }
-
-        if (data.moveToFirst()) {
-            val title = data.getString(data.getColumnIndex(COLUMN_INVENTORY_TITLE))
-            val price = data.getString(data.getColumnIndex(COLUMN_INVENTORY_PRICE));
-            val location = data.getString(data.getColumnIndex(COLUMN_INVENTORY_LOCATION));
-            val quantity = data.getString(data.getColumnIndex(COLUMN_INVENTORY_QUANTITY));
-            val supplier = data.getString(data.getColumnIndex(COLUMN_INVENTORY_SUPPLIER));
-            val description = data.getString(data.getColumnIndex(COLUMN_INVENTORY_DESCRIPTION));
-            val image = data.getBlob(data.getColumnIndex(COLUMN_INVENTORY_IMAGE))
-
-            if (image != null) {
-                val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
-                imageImageView.setImageBitmap(bitmap)
-            } else {
-                imageImageView.setImageResource(R.drawable.image_placeholder)
-            }
-
-            titleEditText.setText(title)
-            priceEditText.setText(price)
-            locationEditText.setText(location)
-            quantityTextView.text = quantity
-            supplierEditText.setText(supplier)
-            descriptionEditText.setText(description)
-        }
-    }
-
-    override fun onLoaderReset(loader: Loader<Cursor>) {
-        titleEditText.setText("")
-        priceEditText.setText("")
-        locationEditText.setText("")
-        quantityTextView.text = ""
-        supplierEditText.setText("")
-        descriptionEditText.setText("")
-        imageImageView.setImageResource(R.drawable.image_placeholder)
     }
 
     @SuppressLint("ClickableViewAccessibility")
