@@ -188,17 +188,13 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
         if (requestCode == GET_IMAGE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 val filePath = data.data!!
-                var bitmap: Bitmap? = null
                 try {
-                    bitmap = MediaStore.Images.Media.getBitmap(contentResolver, filePath)
+                    val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, filePath)
+                    imageImageView.setImageBitmap(bitmap)
                 } catch (e: FileNotFoundException) {
                     e.printStackTrace();
                 } catch (e: IOException) {
                     e.printStackTrace();
-                }
-
-                if (bitmap != null) {
-                    imageImageView.setImageBitmap(bitmap)
                 }
             }
         }

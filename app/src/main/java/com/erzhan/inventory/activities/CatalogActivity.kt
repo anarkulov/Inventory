@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
@@ -30,10 +31,11 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
     private lateinit var addFloatingActionButton: FloatingActionButton
     private lateinit var inventoryRecyclerView: RecyclerView
     private lateinit var inventoryList: ArrayList<Inventory>
+    private lateinit var emptyList: LinearLayout
+    private lateinit var loadingProgressBar: ProgressBar
 
     private lateinit var job: Job
 
-    // CoroutineContext
     override val coroutineContext: CoroutineContext
         get() = job + Dispatchers.Main
 
@@ -48,18 +50,29 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
             startActivity(intent)
         }
 
-// RecyclerView
+        emptyList = findViewById(R.id.emptyLayoutId)
         inventoryRecyclerView = findViewById(R.id.inventoryRecyclerViewId)
         inventoryRecyclerView.layoutManager = GridLayoutManager(this, 2)
         inventoryList = ArrayList()
+        loadingProgressBar = findViewById(R.id.loading_progressbar_id)
 
+        updateData()
+    }
+
+    private fun updateData(){
         launch {
             this@CatalogActivity.let {
                 inventoryList = InventoryDatabase(it).getInventoryDao().getAllInventory() as ArrayList<Inventory>
                 inventoryRecyclerViewAdapter = InventoryRecyclerViewAdapter(it, inventoryList, it)
                 inventoryRecyclerView.adapter = inventoryRecyclerViewAdapter
+                setVisibility()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateData()
     }
 
     override fun onDestroy() {
@@ -67,14 +80,12 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
         job.cancel()
     }
 
-// Open Item Details on click
     override fun onItemClick(inventoryId: Int) {
         val intent = Intent(this, DetailActivity::class.java)
         intent.putExtra(INVENTORY_KEY, inventoryId)
         startActivity(intent)
     }
 
-// Set menu items
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_catalog, menu)
         return true
@@ -102,6 +113,7 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
                 )
                 InventoryDatabase(it).getInventoryDao().addInventory(newInventoryDummyData)
                 toast("Successfully inserted")
+                updateData()
             }
         }
     }
@@ -111,7 +123,21 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
             this@CatalogActivity.let {
                 InventoryDatabase(it).getInventoryDao().deleteAll(inventoryList)
                 toast("Successfully deleted")
+                updateData()
             }
         }
+    }
+
+    private fun setVisibility() {
+        loadingProgressBar.visibility = View.GONE
+        if (inventoryRecyclerViewAdapter.itemCount == 0){
+            emptyList.visibility = View.VISIBLE
+            inventoryRecyclerView.visibility = View.GONE
+        } else {
+            emptyList.visibility = View.GONE
+            inventoryRecyclerView.visibility = View.VISIBLE
+        }
+
+        inventoryRecyclerViewAdapter.notifyDataSetChanged()
     }
 }

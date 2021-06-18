@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Inventory</string>
-    <string name="empty_view_subtitle_text">Get started by adding some inventory</string>
-    <string name="empty_view_title_text">There is no inventory</string>
+    <string name="empty_view_subtitle_text">Get started by adding some product</string>
+    <string name="empty_view_title_text">There is no product</string>
     <string name="action_save">Save</string>
     <string name="action_delete">Delete</string>
     <string name="action_edit">Edit</string>

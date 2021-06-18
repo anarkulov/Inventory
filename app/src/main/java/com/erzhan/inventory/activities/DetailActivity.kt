@@ -57,41 +57,49 @@ class DetailActivity : AppCompatActivity(), CoroutineScope {
         if (bundle != null) {
             inventoryId = bundle.getInt(INVENTORY_KEY)
             toast("Detail: $inventoryId")
-
-            launch {
-                this@DetailActivity.let {
-                    val inventory =
-                        InventoryDatabase(it).getInventoryDao().getInventoryById(inventoryId)
-                    titleTextView.text = inventory.title
-                    priceTextView.text = inventory.price.toString()
-                    quantityTextView.text = inventory.quantity.toString()
-                    locationTextView.text = inventory.location
-                    supplierTextView.text = inventory.supplier
-                    descriptionTextView.text = inventory.description
-
-                    if (inventory.image != null) {
-                        imageImageView.setImageBitmap(inventory.image)
-                    }
-
-                    when (inventory.currency) {
-                        0 -> {
-                            currencyImageView.setImageResource(R.drawable.currency_som)
-                        }
-                        1 -> {
-                            currencyImageView.setImageResource(R.drawable.currency_dollar)
-                        }
-                        2 -> {
-                            currencyImageView.setImageResource(R.drawable.currency_ruble)
-                        }
-                        3 -> {
-                            currencyImageView.setImageResource(R.drawable.currency_tenge)
-                        }
-                    }
-                }
-            }
+            updateData()
         } else {
             toast("Failed to load data")
         }
+    }
+
+    private fun updateData() {
+        launch {
+            this@DetailActivity.let {
+                val inventory =
+                    InventoryDatabase(it).getInventoryDao().getInventoryById(inventoryId)
+                titleTextView.text = inventory.title
+                priceTextView.text = inventory.price.toString()
+                quantityTextView.text = inventory.quantity.toString()
+                locationTextView.text = inventory.location
+                supplierTextView.text = inventory.supplier
+                descriptionTextView.text = inventory.description
+
+                if (inventory.image != null) {
+                    imageImageView.setImageBitmap(inventory.image)
+                }
+
+                when (inventory.currency) {
+                    0 -> {
+                        currencyImageView.setImageResource(R.drawable.currency_som)
+                    }
+                    1 -> {
+                        currencyImageView.setImageResource(R.drawable.currency_dollar)
+                    }
+                    2 -> {
+                        currencyImageView.setImageResource(R.drawable.currency_ruble)
+                    }
+                    3 -> {
+                        currencyImageView.setImageResource(R.drawable.currency_tenge)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateData()
     }
 
     override fun onDestroy() {
