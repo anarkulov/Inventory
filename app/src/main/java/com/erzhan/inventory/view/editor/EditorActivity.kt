@@ -1,4 +1,4 @@
-package com.erzhan.inventory.activities
+package com.erzhan.inventory.view.editor
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.TextUtils
@@ -25,15 +24,18 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.ViewModelProvider
 import com.erzhan.inventory.R
-import com.erzhan.inventory.activities.CatalogActivity.Companion.INVENTORY_KEY
-import com.erzhan.inventory.data.Inventory
-import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_DOLLAR
-import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_RUBLE
-import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_SOM
-import com.erzhan.inventory.data.Inventory.Entry.CURRENCY_TENGE
-import com.erzhan.inventory.data.InventoryDatabase
-import com.erzhan.inventory.data.toast
+import com.erzhan.inventory.view.catalog.CatalogActivity.Companion.INVENTORY_KEY
+import com.erzhan.inventory.model.data.Inventory
+import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_DOLLAR
+import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_RUBLE
+import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_SOM
+import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_TENGE
+import com.erzhan.inventory.model.data.InventoryDatabase
+import com.erzhan.inventory.model.data.toast
+import com.erzhan.inventory.presenter.detail.DetailPresenter
+import com.erzhan.inventory.presenter.editor.EditorPresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,7 +46,7 @@ import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
 
-class EditorActivity : AppCompatActivity(), CoroutineScope {
+class EditorActivity : AppCompatActivity(), EditorContract.View {
 
     companion object {
         private const val IMAGE_SAVE_KEY = "IMAGE SAVE KEY"
@@ -70,17 +72,17 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var decrementButton: Button
     private lateinit var chooseImageButton: Button
     private lateinit var currencySpinner: Spinner
-
-    private lateinit var job: Job
-
-    override val coroutineContext: CoroutineContext
-        get() = job + Dispatchers.Main
+    private lateinit var presenter: EditorPresenter
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
-        job = Job()
+
+        presenter = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
+        ).get(EditorPresenter::class.java)
 
         currencySpinner = findViewById(R.id.spinnerEditId)
 
@@ -131,41 +133,22 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
             toast("Detail: $inventoryId")
 
             if (inventoryId != -1) {
-                launch {
-                    this@EditorActivity.let {
-                        val inventory = InventoryDatabase(it).getInventoryDao().getInventoryById(
-                            inventoryId
-                        )
-                        titleEditText.setText(inventory.title)
-                        priceEditText.setText(inventory.price.toString())
-                        quantityTextView.text = inventory.quantity.toString()
-                        supplierEditText.setText(inventory.supplier)
-                        descriptionEditText.setText(inventory.description)
-                        locationEditText.setText(inventory.location)
-
-                        if (inventory.image != null) {
-                            imageImageView.setImageBitmap(inventory.image)
-                        }
-                        toast("Successfully loaded data")
-                    }
-                }
-            } else {
-                toast("Failed to load data: Invalid id")
+                val inventory = presenter.getInventoryById(inventoryId)
+                showSelectedInventory(inventory)
             }
+        } else {
+            toast("Failed to load data: Invalid id")
         }
         setupSpinner()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 
     private fun drawableToByteArray(bitmap: Bitmap): ByteArray {
         val stream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
         return stream.toByteArray()
     }
+
     override fun onSaveInstanceState(outState: Bundle) {
 
         if (imageImageView.drawable != null) {
@@ -188,7 +171,8 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
         super.onRestoreInstanceState(savedInstanceState)
         quantityTextView.text = savedInstanceState.getString(QUANTITY_SAVE_KEY)
 
-        savedInstanceState.getString(INVENTORY_ID_SAVE_KEY).also { inventoryId = Integer.parseInt(it!!) }
+        savedInstanceState.getString(INVENTORY_ID_SAVE_KEY)
+            .also { inventoryId = Integer.parseInt(it!!) }
         val byteArray = savedInstanceState.getByteArray(IMAGE_SAVE_KEY)
         val bitmapImage = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, it.size) }
         imageImageView.setImageBitmap(bitmapImage)
@@ -344,7 +328,26 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
         alertDialog.show()
     }
 
-    private fun saveInventory() {
+    override fun showSelectedInventory(inventory: Inventory) {
+        titleEditText.setText(inventory.title)
+        priceEditText.setText(inventory.price.toString())
+        quantityTextView.text = inventory.quantity.toString()
+        supplierEditText.setText(inventory.supplier)
+        descriptionEditText.setText(inventory.description)
+        locationEditText.setText(inventory.location)
+
+        if (inventory.image != null) {
+            imageImageView.setImageBitmap(inventory.image)
+        }
+        toast("Successfully loaded data")
+    }
+
+    override fun updateDataOnEdit(inventory: Inventory) {
+        this.inventoryId = inventory.id
+        showSelectedInventory(inventory)
+    }
+
+    override fun saveInventory() {
         if (!inventoryHasChanged) {
             finish()
             return
@@ -376,33 +379,22 @@ class EditorActivity : AppCompatActivity(), CoroutineScope {
         val image: BitmapDrawable = imageImageView.drawable as BitmapDrawable
         val bitmapImage = image.bitmap
 
-
         if (inventoryId == -1) {
-            launch {
-                this@EditorActivity.let {
-                    val inventory = Inventory(
-                        title, intPrice, currency, intQuantity,
-                        location, supplier, description, bitmapImage
-                    )
-
-                    InventoryDatabase(it).getInventoryDao().addInventory(inventory)
-                    toast("Successfully inserted")
-                }
-
-            }
+            val inventory = Inventory(
+                title, intPrice, currency, intQuantity,
+                location, supplier, description, bitmapImage
+            )
+            presenter.addInventory(inventory)
+            toast("Successfully inserted")
         } else {
-            launch {
-                this@EditorActivity.let {
+            val inventory = Inventory(
+                title, intPrice, currency, intQuantity,
+                location, supplier, description, bitmapImage
+            )
 
-                    val inventory = Inventory(
-                        title, intPrice, currency, intQuantity,
-                        location, supplier, description, bitmapImage
-                    )
-                    inventory.id = inventoryId
-                    InventoryDatabase(it).getInventoryDao().updateInventory(inventory)
-                    toast("Successfully updated")
-                }
-            }
+            inventory.id = inventoryId
+            presenter.updateInventory(inventory)
+            toast("Successfully updated")
         }
         finish()
     }

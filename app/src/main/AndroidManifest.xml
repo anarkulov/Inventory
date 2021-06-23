@@ -12,9 +12,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Inventory">
-        <activity android:name=".activities.DetailActivity" />
-        <activity android:name=".activities.EditorActivity" />
-        <activity android:name=".activities.CatalogActivity">
+        <activity android:name=".view.detail.DetailActivity" />
+        <activity android:name=".view.editor.EditorActivity" />
+        <activity android:name=".view.catalog.CatalogActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,4 +1,4 @@
-package com.erzhan.inventory.adapter
+package com.erzhan.inventory.view.adapter
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.erzhan.inventory.R
-import com.erzhan.inventory.data.Inventory
+import com.erzhan.inventory.model.data.Inventory
 
 
 class InventoryRecyclerViewAdapter(

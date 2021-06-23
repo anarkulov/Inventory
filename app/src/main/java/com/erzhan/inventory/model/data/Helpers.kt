@@ -1,4 +1,4 @@
-package com.erzhan.inventory.data
+package com.erzhan.inventory.model.data
 
 import android.content.Context
 import android.widget.Toast

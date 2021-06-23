@@ -1,8 +1,8 @@
-package com.erzhan.inventory.data
+package com.erzhan.inventory.model.data
 
 import android.content.Context
 import androidx.room.*
-import com.erzhan.inventory.data.Inventory.Entry.DATABASE_NAME
+import com.erzhan.inventory.model.data.Inventory.Entry.DATABASE_NAME
 
 @Database(
     entities = [Inventory::class],

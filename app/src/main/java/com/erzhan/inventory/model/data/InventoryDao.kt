@@ -1,4 +1,4 @@
-package com.erzhan.inventory.data
+package com.erzhan.inventory.model.data
 
 import androidx.room.*
 
@@ -19,6 +19,6 @@ interface InventoryDao {
     @Delete
     suspend fun deleteInventory(inventory: Inventory)
 
-    @Delete
-    suspend fun deleteAll(noteList: List<Inventory>)
+    @Query("DELETE FROM inventory")
+    suspend fun deleteAll()
 }
