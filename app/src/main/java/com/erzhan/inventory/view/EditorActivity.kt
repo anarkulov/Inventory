@@ -1,4 +1,4 @@
-package com.erzhan.inventory.view.editor
+package com.erzhan.inventory.view
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -24,29 +24,24 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.lifecycle.ViewModelProvider
 import com.erzhan.inventory.R
-import com.erzhan.inventory.view.catalog.CatalogActivity.Companion.INVENTORY_KEY
+import com.erzhan.inventory.view.CatalogActivity.Companion.INVENTORY_KEY
 import com.erzhan.inventory.model.data.Inventory
 import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_DOLLAR
 import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_RUBLE
 import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_SOM
 import com.erzhan.inventory.model.data.Inventory.Entry.CURRENCY_TENGE
-import com.erzhan.inventory.model.data.InventoryDatabase
 import com.erzhan.inventory.model.data.toast
-import com.erzhan.inventory.presenter.detail.DetailPresenter
-import com.erzhan.inventory.presenter.editor.EditorPresenter
+import com.erzhan.inventory.presenter.EditorPresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
-import kotlin.coroutines.CoroutineContext
 
 
-class EditorActivity : AppCompatActivity(), EditorContract.View {
+class EditorActivity : AppCompatActivity(), MyContract.EditorView {
 
     companion object {
         private const val IMAGE_SAVE_KEY = "IMAGE SAVE KEY"
@@ -79,10 +74,7 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
 
-        presenter = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
-        ).get(EditorPresenter::class.java)
+        presenter = EditorPresenter(this)
 
         currencySpinner = findViewById(R.id.spinnerEditId)
 
@@ -101,7 +93,7 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                chooseFile()
+                chooseImage()
             }
         }
         incrementButton = findViewById(R.id.quantity_add)
@@ -131,10 +123,11 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         if (bundle != null) {
             inventoryId = bundle.getInt(INVENTORY_KEY)
             toast("Detail: $inventoryId")
-
             if (inventoryId != -1) {
-                val inventory = presenter.getInventoryById(inventoryId)
-                showSelectedInventory(inventory)
+                CoroutineScope(Dispatchers.Main).launch {
+                    val inventory = presenter.getInventoryById(inventoryId)
+                    showSelectedInventory(inventory)
+                }
             }
         } else {
             toast("Failed to load data: Invalid id")
@@ -142,18 +135,20 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         setupSpinner()
     }
 
-
-    private fun drawableToByteArray(bitmap: Bitmap): ByteArray {
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-        return stream.toByteArray()
-    }
+//
+//    private fun drawableToByteArray(bitmap: Bitmap): ByteArray {
+//        val stream = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+//        return stream.toByteArray()
+//    }
 
     override fun onSaveInstanceState(outState: Bundle) {
 
         if (imageImageView.drawable != null) {
             val bitmap = imageImageView.drawable.toBitmap()
-            val imageByteArray: ByteArray = drawableToByteArray(bitmap)
+            val stream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            val imageByteArray: ByteArray = stream.toByteArray()
             outState.putByteArray(IMAGE_SAVE_KEY, imageByteArray)
         }
         super.onSaveInstanceState(outState)
@@ -178,7 +173,7 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         imageImageView.setImageBitmap(bitmapImage)
     }
 
-    private fun chooseFile() {
+    override fun chooseImage() {
         val intent = Intent()
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
@@ -237,7 +232,7 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         }
     }
 
-    private fun setupSpinner() {
+    override fun setupSpinner() {
         val currencySpinnerAdapter: ArrayAdapter<*> = ArrayAdapter.createFromResource(
             this,
             R.array.array_currency_options, android.R.layout.simple_spinner_item
@@ -313,8 +308,7 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun showUnsavedChangesDialog(discardButtonClickListener: DialogInterface.OnClickListener) {
-
+    override fun showUnsavedChangesDialog(discardButtonClickListener: DialogInterface.OnClickListener) {
         val builder = AlertDialog.Builder(this)
         builder.setMessage(R.string.unsaved_changes_dialog_msg)
         builder.setPositiveButton(R.string.discard, discardButtonClickListener)
@@ -340,11 +334,6 @@ class EditorActivity : AppCompatActivity(), EditorContract.View {
             imageImageView.setImageBitmap(inventory.image)
         }
         toast("Successfully loaded data")
-    }
-
-    override fun updateDataOnEdit(inventory: Inventory) {
-        this.inventoryId = inventory.id
-        showSelectedInventory(inventory)
     }
 
     override fun saveInventory() {

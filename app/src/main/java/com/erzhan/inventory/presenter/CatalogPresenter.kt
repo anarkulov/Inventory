@@ -1,49 +1,50 @@
-package com.erzhan.inventory.presenter.catalog
+package com.erzhan.inventory.presenter
 
-import android.app.Application
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.BitmapFactory
-import androidx.lifecycle.AndroidViewModel
 import com.erzhan.inventory.InventoryRepository
 import com.erzhan.inventory.R
 import com.erzhan.inventory.model.data.Inventory
-import com.erzhan.inventory.view.catalog.CatalogContract
+import com.erzhan.inventory.view.MyContract
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
-class CatalogPresenter(app: Application) : AndroidViewModel(app), CatalogContract.Presenter{
+class CatalogPresenter(private val repository: InventoryRepository, val context: Context) :
+    MyContract.CatalogPresenter {
 
     private lateinit var inventoryList: List<Inventory>
+    private val view: MyContract.CatalogView = context as MyContract.CatalogView
 
-    private val repository: InventoryRepository = InventoryRepository(app)
-
-    override fun getAllInventories(): List<Inventory> {
-        CoroutineScope(Dispatchers.Main).launch {
-            inventoryList = repository.getAllInventory()
-        }
-
+    override suspend fun getAllInventories(): List<Inventory> {
+        inventoryList = repository.getAllInventories()
         return inventoryList
     }
 
     override fun insertDummyData() {
         CoroutineScope(Dispatchers.Main).launch {
-            val bitmapImage = BitmapFactory.decodeResource(Resources.getSystem(), R.drawable.image_placeholder)
+            val bitmapImage =
+                BitmapFactory.decodeResource(context.resources, R.drawable.image_placeholder)
             val newInventoryDummyData = Inventory(
                 "Dummy Title", 100, Inventory.Entry.CURRENCY_DOLLAR,
                 2, "Bishkek", "D inc",
                 "This is the sample data for this item", bitmapImage
             )
             repository.addInventory(newInventoryDummyData)
+            view.updateDataOnAdd(repository.getAllInventories())
         }
+    }
 
+    override fun start() {
+        CoroutineScope(Dispatchers.Main).launch {
+            view.showAllInventories(repository.getAllInventories())
+        }
     }
 
     override fun deleteAllInventories() {
         CoroutineScope(Dispatchers.Main).launch {
             repository.deleteAll()
+            view.updateDataOnAdd(repository.getAllInventories())
         }
     }
 }

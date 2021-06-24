@@ -1,44 +1,40 @@
 package com.erzhan.inventory
 
-import android.app.Application
 import com.erzhan.inventory.model.data.Inventory
-import com.erzhan.inventory.model.data.InventoryDatabase
+import com.erzhan.inventory.model.data.InventoryDao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class InventoryRepository(app: Application) {
+class InventoryRepository(private val inventoryDao: InventoryDao) {
 
-    val app: Application
-    lateinit var inventory: Inventory
-    lateinit var inventoryList: List<Inventory>
+    private lateinit var inventory: Inventory
+    private lateinit var inventoryList: List<Inventory>
 
-    init {
-        this.app = app
-    }
-
-    suspend fun getAllInventory(): List<Inventory> {
-        inventoryList = InventoryDatabase(app).getInventoryDao().getAllInventory()
+    suspend fun getAllInventories(): List<Inventory> {
+        inventoryList = inventoryDao.getAllInventory()
         return inventoryList
     }
 
     suspend fun addInventory(inventory: Inventory) {
-        InventoryDatabase(app).getInventoryDao().addInventory(inventory)
+        inventoryDao.addInventory(inventory)
     }
 
 
     suspend fun getInventoryById(inventoryId: Int): Inventory {
-        inventory = InventoryDatabase(app).getInventoryDao().getInventoryById(inventoryId)
+        inventory = inventoryDao.getInventoryById(inventoryId)
         return inventory
     }
 
     suspend fun updateInventory(inventory: Inventory) {
-        InventoryDatabase(app).getInventoryDao().updateInventory(inventory)
-
+        inventoryDao.updateInventory(inventory)
     }
 
     suspend fun deleteInventory(inventory: Inventory) {
-        InventoryDatabase(app).getInventoryDao().deleteInventory(inventory)
+        inventoryDao.deleteInventory(inventory)
     }
 
     suspend fun deleteAll() {
-        InventoryDatabase(app).getInventoryDao().deleteAll()
+        inventoryDao.deleteAll()
     }
 }

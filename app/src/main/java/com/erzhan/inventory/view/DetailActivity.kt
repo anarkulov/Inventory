@@ -1,4 +1,4 @@
-package com.erzhan.inventory.view.detail
+package com.erzhan.inventory.view
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,19 +9,18 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NavUtils
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModelProvider
+import com.erzhan.inventory.InventoryRepository
 import com.erzhan.inventory.R
 import com.erzhan.inventory.model.data.Inventory
-import com.erzhan.inventory.view.catalog.CatalogActivity.Companion.INVENTORY_KEY
+import com.erzhan.inventory.model.data.InventoryDatabase
+import com.erzhan.inventory.view.CatalogActivity.Companion.INVENTORY_KEY
 import com.erzhan.inventory.model.data.toast
-import com.erzhan.inventory.presenter.detail.DetailPresenter
-import com.erzhan.inventory.view.editor.EditorActivity
+import com.erzhan.inventory.presenter.DetailPresenter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.launch
 
-class DetailActivity : AppCompatActivity(), DetailContract.View {
+class DetailActivity : AppCompatActivity(), MyContract.DetailView {
 
     private lateinit var titleTextView: TextView
     private lateinit var priceTextView: TextView
@@ -32,6 +31,7 @@ class DetailActivity : AppCompatActivity(), DetailContract.View {
     private lateinit var descriptionTextView: TextView
     private lateinit var imageImageView: ImageView
     private lateinit var presenter: DetailPresenter
+    private lateinit var repository: InventoryRepository
 
     private var inventoryId: Int = -1
 
@@ -49,70 +49,29 @@ class DetailActivity : AppCompatActivity(), DetailContract.View {
         descriptionTextView = findViewById(R.id.descriptionDetailTextViewId)
         imageImageView = findViewById(R.id.imageDetailImageViewId)
 
-        presenter = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
-        ).get(DetailPresenter::class.java)
+        repository = InventoryRepository(InventoryDatabase(this).getInventoryDao())
+        presenter = DetailPresenter(repository, this)
 
         val bundle = intent.extras
         if (bundle != null) {
             inventoryId = bundle.getInt(INVENTORY_KEY)
             toast("Detail: $inventoryId")
-            val inventory = presenter.getInventoryById(inventoryId)
-            showSelectedInventory(inventory)
+            CoroutineScope(Dispatchers.Main).launch {
+                val inventory = presenter.getInventoryById(inventoryId)
+                showSelectedInventory(inventory)
+            }
         } else {
             toast("Failed to load data")
         }
     }
 
-//    private fun updateData() {
-//        launch {
-//            this@DetailActivity.let {
-//                val inventory =
-//                    InventoryDatabase(it).getInventoryDao().getInventoryById(inventoryId)
-//                titleTextView.text = inventory.title
-//                priceTextView.text = inventory.price.toString()
-//                quantityTextView.text = inventory.quantity.toString()
-//                locationTextView.text = inventory.location
-//                supplierTextView.text = inventory.supplier
-//                descriptionTextView.text = inventory.description
-//
-//                if (inventory.image != null) {
-//                    imageImageView.setImageBitmap(inventory.image)
-//                }
-//
-//                when (inventory.currency) {
-//                    0 -> {
-//                        currencyImageView.setImageResource(R.drawable.currency_som)
-//                    }
-//                    1 -> {
-//                        currencyImageView.setImageResource(R.drawable.currency_dollar)
-//                    }
-//                    2 -> {
-//                        currencyImageView.setImageResource(R.drawable.currency_ruble)
-//                    }
-//                    3 -> {
-//                        currencyImageView.setImageResource(R.drawable.currency_tenge)
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-//    override fun onResume() {
-//        super.onResume()
-////        updateData()
-//    }
-
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        job.cancel()
-//    }
-
-//    override fun onBackPressed() {
-//        super.onBackPressed()
-//        return
-//    }
+    override fun onResume() {
+        super.onResume()
+        CoroutineScope(Dispatchers.Main).launch {
+            val inventory = presenter.getInventoryById(inventoryId)
+            updateDataOnEdit(inventory)
+        }
+    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_detail, menu)
@@ -121,7 +80,7 @@ class DetailActivity : AppCompatActivity(), DetailContract.View {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_edit) {
-            editInventory(inventoryId)
+            onClickEditInventoryButton(inventoryId)
             return true
         } else if (item.itemId == R.id.action_delete) {
             showDeleteConfirmationDialog()
@@ -150,33 +109,6 @@ class DetailActivity : AppCompatActivity(), DetailContract.View {
         val alertDialog = builder.create()
         alertDialog.show()
     }
-
-//    private fun deleteInventory() {
-//        if (inventoryId == -1) {
-//            Toast.makeText(
-//                this, getString(R.string.editor_delete_pet_failed),
-//                Toast.LENGTH_SHORT
-//            ).show()
-//        } else {
-//            launch {
-//                this@DetailActivity.let {
-//                    val dao = InventoryDatabase(it).getInventoryDao()
-//                    val inventory = dao.getInventoryById(inventoryId!!)
-//                    dao.deleteInventory(inventory)
-//                    toast(getString(R.string.editor_delete_pet_successful))
-//                }
-//            }
-//        }
-//        finish()
-//    }
-
-//    private fun editInventory() {
-//        val intent = Intent(this, EditorActivity::class.java)
-//        intent.putExtra(
-//            INVENTORY_KEY, inventoryId
-//        )
-//        startActivity(intent)
-//    }
 
     override fun showSelectedInventory(inventory: Inventory) {
         titleTextView.text = inventory.title
@@ -207,11 +139,11 @@ class DetailActivity : AppCompatActivity(), DetailContract.View {
     }
 
     override fun updateDataOnEdit(inventory: Inventory) {
-        this.inventoryId = inventory.id
+//        this.inventoryId = inventory.id
         showSelectedInventory(inventory)
     }
 
-    override fun editInventory(inventoryId: Int) {
+    override fun onClickEditInventoryButton(inventoryId: Int) {
         val intent = Intent(this, EditorActivity::class.java)
         intent.putExtra(
             INVENTORY_KEY, inventoryId

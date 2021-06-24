@@ -1,24 +1,26 @@
-package com.erzhan.inventory.view.catalog
+package com.erzhan.inventory.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.erzhan.inventory.InventoryRepository
 import com.erzhan.inventory.R
 import com.erzhan.inventory.model.data.Inventory
-import com.erzhan.inventory.presenter.catalog.CatalogPresenter
+import com.erzhan.inventory.model.data.InventoryDatabase
+import com.erzhan.inventory.presenter.CatalogPresenter
 import com.erzhan.inventory.view.adapter.InventoryRecyclerViewAdapter
-import com.erzhan.inventory.view.detail.DetailActivity
-import com.erzhan.inventory.view.editor.EditorActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
 
-class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItemClickListener, CatalogContract.View{
+class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItemClickListener,
+    MyContract.CatalogView {
 
     companion object {
         const val INVENTORY_KEY = "INVENTORY_ID"
@@ -31,15 +33,14 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
     private lateinit var emptyList: LinearLayout
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var presenter: CatalogPresenter
+    private lateinit var repository: InventoryRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        presenter = ViewModelProvider(
-            this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application))
-            .get(CatalogPresenter::class.java)
+        repository = InventoryRepository(InventoryDatabase(this).getInventoryDao())
+        presenter = CatalogPresenter(repository, this)
 
         addFloatingActionButton = findViewById(R.id.addFloatingActionButtonId);
         addFloatingActionButton.setOnClickListener {
@@ -50,20 +51,25 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
         emptyList = findViewById(R.id.emptyLayoutId)
         inventoryRecyclerView = findViewById(R.id.inventoryRecyclerViewId)
         inventoryRecyclerView.layoutManager = GridLayoutManager(this, 2)
+
         inventoryList = ArrayList()
 
         loadingProgressBar = findViewById(R.id.loading_progressbar_id)
-
-//        showAllInventories(presenter.getAllInventories())
     }
 
     override fun showAllInventories(inventoryList: List<Inventory>) {
         inventoryRecyclerViewAdapter = InventoryRecyclerViewAdapter(this, inventoryList, this)
         inventoryRecyclerView.adapter = inventoryRecyclerViewAdapter
+        setVisibility()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        presenter.start()
     }
 
     override fun updateDataOnAdd(inventoryList: List<Inventory>) {
-        this.inventoryList = inventoryList as ArrayList<Inventory>
+        showAllInventories(inventoryList)
     }
 
     override fun onItemClick(inventoryId: Int) {
@@ -88,43 +94,16 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
         return super.onOptionsItemSelected(item)
     }
 
-//    private fun insertDummyData() {
-//        launch {
-//            this@CatalogActivity.let {
-//                val bitmapImage = BitmapFactory.decodeResource(resources, R.drawable.image_placeholder)
-//                val newInventoryDummyData = Inventory(
-//                    "Dummy Title", 100, CURRENCY_DOLLAR,
-//                    2, "Bishkek", "D inc",
-//                    "This is the sample data for this item", bitmapImage
-//                )
-//                InventoryDatabase(it).getInventoryDao().addInventory(newInventoryDummyData)
-//                toast("Successfully inserted")
-//                updateData()
-//            }
-//        }
-//    }
+    private fun setVisibility() {
+        loadingProgressBar.visibility = View.GONE
+        if (inventoryRecyclerViewAdapter.itemCount == 0){
+            emptyList.visibility = View.VISIBLE
+            inventoryRecyclerView.visibility = View.GONE
+        } else {
+            emptyList.visibility = View.GONE
+            inventoryRecyclerView.visibility = View.VISIBLE
+        }
 
-//    private fun deleteAllData() {
-//        launch {
-//            this@CatalogActivity.let {
-//                InventoryDatabase(it).getInventoryDao().deleteAll()
-//                toast("Successfully deleted")
-//                updateData()
-//            }
-//        }
-//    }
-
-//    private fun setVisibility() {
-//        loadingProgressBar.visibility = View.GONE
-//        if (inventoryRecyclerViewAdapter.itemCount == 0){
-//            emptyList.visibility = View.VISIBLE
-//            inventoryRecyclerView.visibility = View.GONE
-//        } else {
-//            emptyList.visibility = View.GONE
-//            inventoryRecyclerView.visibility = View.VISIBLE
-//        }
-//
-//        inventoryRecyclerViewAdapter.notifyDataSetChanged()
-//    }
-
+        inventoryRecyclerViewAdapter.notifyDataSetChanged()
+    }
 }
