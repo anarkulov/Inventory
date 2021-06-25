@@ -129,9 +129,8 @@ class EditorActivity : AppCompatActivity(), MyContract.EditorView {
                     showSelectedInventory(inventory)
                 }
             }
-        } else {
-            toast("Failed to load data: Invalid id")
         }
+
         setupSpinner()
     }
 
@@ -333,7 +332,6 @@ class EditorActivity : AppCompatActivity(), MyContract.EditorView {
         if (inventory.image != null) {
             imageImageView.setImageBitmap(inventory.image)
         }
-        toast("Successfully loaded data")
     }
 
     override fun saveInventory() {
