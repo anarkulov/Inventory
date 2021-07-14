@@ -4,7 +4,7 @@ import androidx.room.*
 
 @Dao
 interface InventoryDao {
-    @Query("SELECT * FROM inventory ORDER BY id DESC")
+    @Query("SELECT * FROM inventory ORDER BY id DESC limit 200")
     suspend fun getAllInventory(): List<Inventory>
 
     @Query("SELECT * FROM inventory WHERE id = :inventoryId")

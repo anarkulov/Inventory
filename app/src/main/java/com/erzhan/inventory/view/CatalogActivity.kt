@@ -50,9 +50,10 @@ class CatalogActivity : AppCompatActivity(), InventoryRecyclerViewAdapter.OnItem
 
         emptyList = findViewById(R.id.emptyLayoutId)
         inventoryRecyclerView = findViewById(R.id.inventoryRecyclerViewId)
-        inventoryRecyclerView.layoutManager = GridLayoutManager(this, 2)
-
         inventoryList = ArrayList()
+        inventoryRecyclerView.layoutManager = GridLayoutManager(this, 2)
+        inventoryRecyclerViewAdapter = InventoryRecyclerViewAdapter(this, inventoryList, this)
+        inventoryRecyclerView.adapter = inventoryRecyclerViewAdapter
 
         loadingProgressBar = findViewById(R.id.loading_progressbar_id)
     }
