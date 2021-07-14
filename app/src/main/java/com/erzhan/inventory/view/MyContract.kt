@@ -35,6 +35,7 @@ interface MyContract {
         fun showSelectedInventory(inventory: Inventory)
         fun updateDataOnEdit(inventory: Inventory)
         fun onClickEditInventoryButton(inventoryId: Int)
+        fun onClickLocation()
     }
 
     interface EditorPresenter : BasicPresenter{

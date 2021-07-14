@@ -1,11 +1,15 @@
 package com.erzhan.inventory.view
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NavUtils
@@ -62,6 +66,10 @@ class DetailActivity : AppCompatActivity(), MyContract.DetailView {
             }
         } else {
             toast("Failed to load data")
+        }
+
+        locationTextView.setOnClickListener {
+            onClickLocation()
         }
     }
 
@@ -149,5 +157,20 @@ class DetailActivity : AppCompatActivity(), MyContract.DetailView {
             INVENTORY_KEY, inventoryId
         )
         startActivity(intent)
+    }
+
+    override fun onClickLocation() {
+        val mapLocal = locationTextView.text.toString()
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$mapLocal"))
+        val chooser = Intent.createChooser(intent, "Choose the app")
+        try {
+            startActivity(chooser)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(
+                this,
+                "Could find the app to open location",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 }
